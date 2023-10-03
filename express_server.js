@@ -26,15 +26,17 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
-function generateRandomString() {
+// 6 string randome key generator for URL keys
+const generateRandomString = () => {
+  //list of valid letters to use
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let randomString = "";
-
+  // loop through with math random and push 6 random characters to return
   for (let i = 0; i < 6; i++) {
     const list = Math.floor(Math.random() * letters.length);
     randomString += letters.charAt(list);
   }
-return randomString
+  return randomString;
 
 };
 
@@ -42,7 +44,9 @@ app.use(express.urlencoded({ extended: true }));
 
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  const key = generateRandomString(); // use my new random key generator
+  urlDatabase[key] = req.body.longURL; // push randome key and url
+  res.redirect(`/urls/${key}`); //redirect to urls/key
 });
 
 
@@ -57,26 +61,10 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// create call for users to use the short url key to go straight to the webpage
+app.get("/u/:id", (req, res) => {
+  const key = req.params.id; // pull the key from the reqest
+  const longURL = urlDatabase[key]; // pull the URL based on the key given
+  res.redirect(longURL); // redirect to the url
 
-
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
-
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html)\n");
-// });
-
-// app.get("/set", (req, res) => {
-//   const a = 1;
-//   res.send(`a = ${a}`);
-//  });
- 
-//  app.get("/fetch", (req, res) => {
-//   res.send(`a = ${a}`);
-//  });
-
-//  app.get("/hello", (req, res) => {
-//   const templateVars = { greeting: "Hello World!" };
-//   res.render("hello_world", templateVars);
-// });
+});
