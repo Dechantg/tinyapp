@@ -26,6 +26,32 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
+function generateRandomString() {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let randomString = "";
+
+  for (let i = 0; i < 6; i++) {
+    const list = Math.floor(Math.random() * letters.length);
+    randomString += letters.charAt(list);
+  }
+return randomString
+
+};
+
+app.use(express.urlencoded({ extended: true }));
+
+app.post("/urls", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console
+  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+});
+
+
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+
+
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
