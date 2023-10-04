@@ -61,6 +61,14 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.post("/urls/:id/delete", (req, res) => {
+  const deleteID = req.params.id;
+
+  delete urlDatabase[deleteID];
+
+  res.redirect("/urls");
+});
+
 // create call for users to use the short url key to go straight to the webpage
 app.get("/u/:id", (req, res) => {
   const key = req.params.id; // pull the key from the reqest
