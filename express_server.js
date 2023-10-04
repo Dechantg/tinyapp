@@ -49,6 +49,14 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${key}`); //redirect to urls/key
 });
 
+app.post("/urls/:id/edit", (req, res) => {
+  const editID = req.params.id;
+
+  urlDatabase[editID] = req.body.longURL;
+
+  res.redirect("/urls");
+});
+
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");

@@ -22,10 +22,31 @@
         <p class="card-text">
           Short URL ID: <a href="<%= longURL %>"><%= id %></a>
         </p>
-        
+        <p class="mb-3">EDIT:</p>
+
+        <div class="d-flex justify-content-center align-items-center">
+          <form method="POST" action="/urls/<%= id %>/edit" class="form-inline">
+            <div class="form-group mr-2">
+              <label for="longURL" class="font-weight-bold">New URL:</label>
+            </div>
+            <div class="form-group mr-2">
+              <input
+                class="form-control"
+                type="text"
+                name="longURL"
+                placeholder="http://"
+                style="width: 250px;"
+              />
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+          </form>
+        </div>
       </div>
       <div class="card-footer text-muted"></div>
     </div>
+</body>
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
