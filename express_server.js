@@ -2,6 +2,7 @@
 
 const express = require("express");
 const morgan = require("morgan");
+const bcrypt = require("bcryptjs");
 const app = express();
 const cookieParser = require("cookie-parser");
 const PORT = 8080;
@@ -43,12 +44,12 @@ const validateUser = (userId) => {
 
 
 const users = {
-  userRandomID: {
+  abcID: {
     id: "user1",
     email: "a@b.com",
     password: "1234",
   },
-  user2RandomID: {
+  defID: {
     id: "user2",
     email: "c@d.com",
     password: "5678",
@@ -59,8 +60,14 @@ const users = {
 
 
 const urlDatabase = {
-  "b2xVn2" : "http://www.lighthouselabs.ca",
-  "9sm5xK" : "http://www.google.com"
+  "b2xVn2" : {
+    longUrl: "http://www.lighthouselabs.ca",
+    userId: "user1",
+  },
+  "9sm5xK" : {
+    longUrl: "http://www.google.com",
+    userId: "user2",
+  },
 };
 
 app.get("/", (req, res) => {
@@ -141,11 +148,10 @@ if (!getPwdByEmail(userId, pwd)) {
 app.get("/urls", (req, res) => {
   const userIdCookie = req.cookies.userId;
 
-  if (!userIdCookie) {
+  if (!userIdCookie || !users[userIdCookie]) {
     const templateVars = {
       user: users,
-      urls: urlDatabase,
-      // userId: userId,
+      urls: {},
       email: null,
     };
     return res.render("urls_index", templateVars);
@@ -155,14 +161,21 @@ app.get("/urls", (req, res) => {
   console.log("user id cookie", userIdCookie)
 
   const userEmail = users[userIdCookie].email;
+  const userId = users[userIdCookie].id;
+
 
   console.log("user email to pass from cookie:", userEmail)
   
+  const userUrls = {};
+  for (const key in urlDatabase) {
+    if (urlDatabase[key].userId === userId) {
+      userUrls[key] = urlDatabase[key];
+    }
+  }
 
-  const userId = req.cookies["userId"];
   const templateVars = {
     user: users,
-    urls: urlDatabase,
+    urls: userUrls,
     userId: userId,
     email: userEmail,
   };
@@ -188,8 +201,15 @@ app.post("/urls_add", (req, res) => {
 
   console.log(req.body); // Log the POST request body to the console
   const key = generateRandomString(8); // use my new random key generator
-  urlDatabase[key] = req.body.longURL; // push randome key and url
+  const longUrl = req.body.longUrl;
   const userId = req.cookies["userId"];
+
+  // Add the URL with longURL and userId to the database
+  urlDatabase[key] = {
+    longUrl,
+    userId,
+  };
+
 
   res.redirect(`/urls/${key}`);
 });
@@ -220,7 +240,7 @@ app.post("/urls/:id/edit", (req, res) => {
   const editID = req.params.id;
 
 
-  urlDatabase[editID] = req.body.longURL;
+  urlDatabase[editID].longUrl = req.body.longUrl;
   
 
   res.redirect("/urls");
@@ -253,28 +273,55 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-
   const userIdCookie = req.cookies.userId;
+  const urlId = req.params.id;
 
   if (!userIdCookie) {
-    const templateVars = { id: req.params.id,
-      longURL: urlDatabase[req.params.id],
-      userId: req.cookies["userId"],
-      email: null,   };
-    res.render("urls_show", templateVars);
+    return res.send("You need to be logged in to view this page");
+  }
 
-   
-  };
-  
-  const templateVars = { id: req.params.id,
-    longURL: urlDatabase[req.params.id],
+  if (!urlDatabase[urlId]) {
+    return res.status(404).send("URL not found"); // Handle URL not found
+  }
+
+  if (urlDatabase[urlId].userId !== userIdCookie) {
+    return res.send("This is not your URL");
+  }
+
+  const templateVars = {
+    id: req.params.id,
+    longUrl: urlDatabase[req.params.id].longUrl,
     userId: req.cookies["userId"],
-    email: users[userIdCookie].email,   };
+    email: users[userIdCookie].email,
+  };
+
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls/:id/delete", (req, res) => {
+  const userIdCookie = req.cookies.userId;
   const deleteID = req.params.id;
+
+
+    // Check if the user is logged in
+  if (!userIdCookie) {
+    return res.send("You must be logged in to delete cookies.");
+  }
+
+
+  // Check if the URL exists in the database
+  if (!urlDatabase[deleteID]) {
+    return res.send("This cookie does not exist.");
+  }
+
+  const userId = urlDatabase[deleteID].userId;
+
+  const userDeleting = users[userIdCookie].id;
+  if (userDeleting !== userId) {
+    return res.send("You cannot delete a cookie you do not own.");
+  }
+
+ 
 
   delete urlDatabase[deleteID];
 
@@ -284,13 +331,12 @@ app.post("/urls/:id/delete", (req, res) => {
 // // create call for users to use the short url key to go straight to the webpage
 app.get("/u/:id", (req, res) => {
   const key = req.params.id; // pull the key from the reqest
-  const longURL = urlDatabase[key]; // pull the URL based on the key given
-  if (!longURL) {
+  const longUrl = urlDatabase[key].longUrl; // pull the URL based on the key given
+  if (!longUrl) {
     return res.status(404).send("URL not found");
   }
   
-  res.redirect(longURL); // redirect to the url
-
+  res.redirect(longUrl); // redirect to the url
 });
 
 
@@ -302,12 +348,18 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  if (validateUser(req.cookies.userId)) {
-    
+  // const templateVars = {
+  //   email: null,
+  // };
+  
+
+  if (validateUser(req.cookies.userId)) {    
     return res.redirect("/urls");
   };
   const templateVars = {
     userId: req.cookies["userId"],
+    email: null,
+
   };
   res.render("register", templateVars);
 });

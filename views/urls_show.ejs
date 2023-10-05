@@ -18,22 +18,22 @@
     <div class="card text-center">
       <div class="card-header"></div>
       <div class="card-body">
-        <h5 class="card-title">TinyURL for: <%= longURL %></h5>
+        <h5 class="card-title">TinyURL for: <%= longUrl %></h5>
         <p class="card-text">
-          Short URL ID: <a href="<%= longURL %>"><%= id %></a>
+          Short URL ID: <a href="<%= longUrl %>"><%= id %></a>
         </p>
         <p class="mb-3">EDIT:</p>
 
         <div class="d-flex justify-content-center align-items-center">
           <form method="POST" action="/urls/<%= id %>/edit" class="form-inline">
             <div class="form-group mr-2">
-              <label for="longURL" class="font-weight-bold">New URL:</label>
+              <label for="longUrl" class="font-weight-bold">New URL:</label>
             </div>
             <div class="form-group mr-2">
               <input
                 class="form-control"
                 type="text"
-                name="longURL"
+                name="longUrl"
                 placeholder="http://"
                 style="width: 250px;"
               />
