@@ -14,20 +14,31 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
+const getUserByEmail = (userId) => {
+  for (const id in users) {
+    if (users[id].email === userId) {
+      return true;
+    }
+  }
+  return false; 
+}
 
-
+const getPwdByEmail = (email, pwd) => {
+  for (const userId in users) {
+    const user = users[userId];
+    if (user.email === email && user.password === pwd) {
+      return true;
+    }
+  }
+  return false;
+};
 
 
 app.get("/urls", (req, res) => {
 
-  const userIdCookie = req.cookies.userId
-  userEmail = users[userIdCookie].email; 
-  const templateVars = {
+  const templateVars = { 
     user: users,
-    urls: urlDatabase,
-    userId: userIdCookie,
-    email: userEmail
-    };
+    urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
@@ -72,34 +83,45 @@ const generateRandomString = (char) => {
 
 };
 
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
 
 app.post("/login", (req, res) => {
   const userId = req.body.userId;
+  const pwd = req.body.password;
+  if (!getUserByEmail(userId)) {
+    return res.status(403).send("Invalid Login, please check your username or register");
+  }
+
+if (!getPwdByEmail(userId, pwd)) {
+  return res.status(403).send("Error!! Invalid Password, please check your login and try again");
+}
+
 
   for (const id in users) {
     if (users[id].email === userId) {
-      console.log(id);
-      console.log(users[id].email)
       res.cookie("userId", id);
+      // Render the login.ejs template with the appropriate variables
       return res.redirect("/urls");
     }
   }
 
-
+  return res.status(401).send("Login failed: Invalid username or password");
 });
+
 
 app.get("/urls", (req, res) => {
   
 
 
-  const userIdCookie = req.cookies.userId
-  userEmail = users[userIdCookie].email; 
+  const userId = req.cookies["userId"];
   const templateVars = {
     user: users,
     urls: urlDatabase,
-    userId: userIdCookie,
-    email: userEmail
-    };
+    userId: userId,
+  };
 
   // Check if a user with the given ID exists
   if (userId && users[userId]) {
@@ -111,12 +133,12 @@ app.get("/urls", (req, res) => {
 
 
 
-// app.post("/urls", (req, res) => {
-//   console.log(req.body.userId); // Log the POST request body to the console
+app.post("/urls", (req, res) => {
+  console.log(req.body.userId); // Log the POST request body to the console
   
 
-//   res.redirect(`/urls`); 
-// });
+  res.redirect(`/urls`); 
+});
 
 
 
@@ -126,15 +148,8 @@ app.post("/urls_add", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
   const key = generateRandomString(8); // use my new random key generator
   urlDatabase[key] = req.body.longURL; // push randome key and url
-  const userId = req.cookies["user_id"] ;
-  const userIdCookie = req.cookies.userId
-  userEmail = users[userIdCookie].email; 
-  const templateVars = {
-    user: users,
-    urls: urlDatabase,
-    userId: userIdCookie,
-    email: userEmail
-    };
+  const userId = req.cookies["userId"];
+
  
 });
 
@@ -145,14 +160,7 @@ app.post("/urls/:id/edit", (req, res) => {
   const editID = req.params.id;
 
   urlDatabase[editID] = req.body.longURL;
-  const userIdCookie = req.cookies.userId
-  userEmail = users[userIdCookie].email; 
-  const templateVars = {
-    user: users,
-    urls: urlDatabase,
-    userId: userIdCookie,
-    email: userEmail
-    };
+  
 
   res.redirect("/urls");
 });
@@ -161,21 +169,22 @@ app.post("/urls/:id/edit", (req, res) => {
 app.get("/urls/new", (req, res) => {
 
   const userIdCookie = req.cookies.userId
-  userEmail = users[userIdCookie].email; 
   const templateVars = {
-    user: users,
-    urls: urlDatabase,
-    userId: userIdCookie,
-    email: userEmail
-    };
+    email: users[userIdCookie].email,
+  };
   res.render("urls_new", templateVars);
 });
 
 
 app.get("/urls/:id", (req, res) => {
+
+  const userIdCookie = req.cookies.userId
+
+  
   const templateVars = { id: req.params.id,
     longURL: urlDatabase[req.params.id],
-    userId: req.cookies["user_id"]   };
+    userId: req.cookies["userId"],
+    email: users[userIdCookie].email,   };
   res.render("urls_show", templateVars);
 });
 
@@ -199,12 +208,13 @@ app.get("/u/:id", (req, res) => {
 app.post("/logout", (req, res) => {
 
   res.clearCookie("userId");
-  res.redirect("/urls");
+    res.redirect("/login");
+
 });
 
 app.get("/register", (req, res) => {
   const templateVars = {
-    userId: req.cookies["user_id"],
+    userId: req.cookies["userId"],
   };
   res.render("register", templateVars);
 });
@@ -212,16 +222,27 @@ app.get("/register", (req, res) => {
 
 app.post("/submitId", (req, res) => {
 
+  if (!req.body.userId || !req.body.password) {
+    return res.status(400).send("Error!! Please enter a valid Email and Password");
+  };
+
+  if (getUserByEmail(req.body.userId)) {
+    return res.status(400).send("Error!! Email already exists. Please login");
+  }
+
+
+
+
   const newId = generateRandomString(8); // use my new random key generator
 
   const newUser = {
     id: newId,
-    email: req.body.email,
+    email: req.body.userId,
     password: req.body.password,
   };
 
   users[newId] = newUser;
-  res.cookie("user_id", newId);
+  res.cookie("userId", newId);
 
 
 
