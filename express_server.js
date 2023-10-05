@@ -20,13 +20,33 @@ app.use(morgan('dev'));
 
 app.get("/urls", (req, res) => {
 
-  const templateVars = { 
-    username: req.cookies["username"],
-    urls: urlDatabase };
+  const userIdCookie = req.cookies.userId
+  userEmail = users[userIdCookie].email; 
+  const templateVars = {
+    user: users,
+    urls: urlDatabase,
+    userId: userIdCookie,
+    email: userEmail
+    };
   res.render("urls_index", templateVars);
 });
 
-// // const username = {};
+
+const users = {
+  userRandomID: {
+    id: "user1",
+    email: "a@b.com",
+    password: "1234",
+  },
+  user2RandomID: {
+    id: "user2",
+    email: "c@d.com",
+    password: "5678",
+  },
+};
+
+
+
 
 const urlDatabase = {
   "b2xVn2" : "http://www.lighthouselabs.ca",
@@ -43,9 +63,9 @@ app.listen(PORT, () => {
 });
 
 // 6 string randome key generator for URL keys
-const generateRandomString = () => {
+const generateRandomString = (char) => {
   //list of valid letters to use using what andy showed in lecture
-  const randomString = Math.random().toString(36).substring(2, 8);
+  const randomString = Math.random().toString(36).substring(2, char);
   console.log(`Random String for shortURL: ${randomString}`);
   
   return randomString;
@@ -53,24 +73,50 @@ const generateRandomString = () => {
 };
 
 
-
 app.post("/login", (req, res) => {
-  console.log(req.body.username);
-  const username = req.body.username;
+  const userId = req.body.userId;
 
-  res.cookie("username", username);
-    res.redirect("/urls");
+  for (const id in users) {
+    if (users[id].email === userId) {
+      console.log(id);
+      console.log(users[id].email)
+      res.cookie("userId", id);
+      return res.redirect("/urls");
+    }
+  }
+
 
 });
 
-
-
-app.post("/urls", (req, res) => {
-  console.log(req.body.username); // Log the POST request body to the console
+app.get("/urls", (req, res) => {
   
 
-  res.redirect(`/urls`); 
+
+  const userIdCookie = req.cookies.userId
+  userEmail = users[userIdCookie].email; 
+  const templateVars = {
+    user: users,
+    urls: urlDatabase,
+    userId: userIdCookie,
+    email: userEmail
+    };
+
+  // Check if a user with the given ID exists
+  if (userId && users[userId]) {
+    templateVars.email = users[userId].email;
+  }
+
+  res.render("urls_index", templateVars);
 });
+
+
+
+// app.post("/urls", (req, res) => {
+//   console.log(req.body.userId); // Log the POST request body to the console
+  
+
+//   res.redirect(`/urls`); 
+// });
 
 
 
@@ -78,9 +124,17 @@ app.post("/urls", (req, res) => {
 app.post("/urls_add", (req, res) => {
 
   console.log(req.body); // Log the POST request body to the console
-  const key = generateRandomString(); // use my new random key generator
+  const key = generateRandomString(8); // use my new random key generator
   urlDatabase[key] = req.body.longURL; // push randome key and url
-  const username = req.cookies.username;
+  const userId = req.cookies["user_id"] ;
+  const userIdCookie = req.cookies.userId
+  userEmail = users[userIdCookie].email; 
+  const templateVars = {
+    user: users,
+    urls: urlDatabase,
+    userId: userIdCookie,
+    email: userEmail
+    };
  
 });
 
@@ -91,15 +145,29 @@ app.post("/urls/:id/edit", (req, res) => {
   const editID = req.params.id;
 
   urlDatabase[editID] = req.body.longURL;
+  const userIdCookie = req.cookies.userId
+  userEmail = users[userIdCookie].email; 
+  const templateVars = {
+    user: users,
+    urls: urlDatabase,
+    userId: userIdCookie,
+    email: userEmail
+    };
 
   res.redirect("/urls");
 });
 
 
 app.get("/urls/new", (req, res) => {
+
+  const userIdCookie = req.cookies.userId
+  userEmail = users[userIdCookie].email; 
   const templateVars = {
-    username: req.cookies["username"],
-  };
+    user: users,
+    urls: urlDatabase,
+    userId: userIdCookie,
+    email: userEmail
+    };
   res.render("urls_new", templateVars);
 });
 
@@ -107,8 +175,7 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id,
     longURL: urlDatabase[req.params.id],
-    username: req.cookies["username"]
-   };
+    userId: req.cookies["user_id"]   };
   res.render("urls_show", templateVars);
 });
 
@@ -130,10 +197,36 @@ app.get("/u/:id", (req, res) => {
 
 
 app.post("/logout", (req, res) => {
-  console.log(req.body.username);
 
-  res.clearCookie("username");
-    res.redirect("/urls");
-
+  res.clearCookie("userId");
+  res.redirect("/urls");
 });
 
+app.get("/register", (req, res) => {
+  const templateVars = {
+    userId: req.cookies["user_id"],
+  };
+  res.render("register", templateVars);
+});
+
+
+app.post("/submitId", (req, res) => {
+
+  const newId = generateRandomString(8); // use my new random key generator
+
+  const newUser = {
+    id: newId,
+    email: req.body.email,
+    password: req.body.password,
+  };
+
+  users[newId] = newUser;
+  res.cookie("user_id", newId);
+
+
+
+  console.log(newId);
+  console.log(req.body.email);
+  console.log(users);
+  res.redirect("/urls");
+});

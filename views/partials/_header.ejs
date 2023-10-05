@@ -19,9 +19,9 @@
       </div>
     </div>
 
-    <% if (typeof username !== 'undefined') { %>
+    <% if (typeof email !== 'undefined') { %>
       <div class="navbar-text">
-        Logged in as: <%= username %>
+        Logged in as: <%= email %>
         <form action="/logout" method="POST" style="display: inline;">
           <button type="submit" class="btn btn-primary">Logout</button>
         </form>
@@ -29,8 +29,10 @@
     <% } else { %>
       <form action="/login" method="POST">
         <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
+        <input type="text" id="userId" name="userId" required>
         <button type="submit">Log In</button>
+        <a href="/register" class="btn btn-primary">Register</a> 
+
       </form>
     <% } %>
     </nav>
