@@ -15,24 +15,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
+
 const getUserByEmail = (userId) => {
   for (const id in users) {
     if (users[id].email === userId) {
-      return true;
+      return id;
     }
   }
   return false; 
 }
 
-const getPwdByEmail = (email, pwd) => {
-  for (const userId in users) {
-    const user = users[userId];
-    if (user.email === email && user.password === pwd) {
-      return true;
-    }
-  }
-  return false;
-};
 
 const validateUser = (userId) => {
   if (Object.keys(users).includes(userId)) {
@@ -43,18 +35,7 @@ const validateUser = (userId) => {
 
 
 
-const users = {
-  abcID: {
-    id: "user1",
-    email: "a@b.com",
-    password: "1234",
-  },
-  defID: {
-    id: "user2",
-    email: "c@d.com",
-    password: "5678",
-  },
-};
+const users = {};
 
 
 
@@ -108,38 +89,30 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
 
-  // if (req.cookies.my.userId) {
-  //   const userName = req.cookies.my.userId
-  //   for (const id in users) {
-  //     if (users[id].email === userId) {
-  //       res.cookie("userId", id);
-  //       // Render the login.ejs template with the appropriate variables
-  //       return res.redirect("/urls");
-  //     }
-  //   }
-  // }
-
-
-
-
+  
   const userId = req.body.userId;
-  const pwd = req.body.password;
+  
+  // const pwd = req.body.password;
   if (!getUserByEmail(userId)) {
     return res.status(403).send("Invalid Login, please check your username or register");
   }
 
-if (!getPwdByEmail(userId, pwd)) {
-  return res.status(403).send("Error!! Invalid Password, please check your login and try again");
-}
+  const idFromEmail = (getUserByEmail(userId))
 
+  console.log("id from email function: ", idFromEmail)
 
-  for (const id in users) {
-    if (users[id].email === userId) {
-      res.cookie("userId", id);
+  const hashedPassword = users[idFromEmail].password;
+
+  console.log(hashedPassword)
+
+  const passwordMatch = bcrypt.compareSync(req.body.password, hashedPassword);
+
+  if (passwordMatch) {
+      res.cookie("userId", idFromEmail);
       // Render the login.ejs template with the appropriate variables
       return res.redirect("/urls");
     }
-  }
+
 
   return res.status(401).send("Login failed: Invalid username or password");
 });
@@ -380,10 +353,12 @@ app.post("/submitId", (req, res) => {
 
   const newId = generateRandomString(8); // use my new random key generator
 
+  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+
   const newUser = {
     id: newId,
     email: req.body.userId,
-    password: req.body.password,
+    password: hashedPassword,
   };
 
   users[newId] = newUser;
