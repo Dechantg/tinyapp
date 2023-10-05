@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <% if (typeof email !== 'undefined') { %>
+    <% if (email !== null) { %> 
       <div class="navbar-text">
         Logged in as: <%= email %>
         <form action="/logout" method="POST" style="display: inline;">
