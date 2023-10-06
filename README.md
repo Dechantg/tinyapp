@@ -14,4 +14,8 @@ Users do not have access to other users links. A valid session cookie is require
 - bcryptjs
 - cookie-session
 
-  
+  ## Getting Started
+
+  Install all dependencies (using `npm install`)
+  Run the development server with 'node express_server.js'
+  JSON is confirgured for demon running with commany `npm start` command
