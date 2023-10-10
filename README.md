@@ -11,6 +11,7 @@ Users do not have access to other users links. A valid session cookie is require
 !["Screenshot of Login page"](https://github.com/Dechantg/tinyapp/blob/master/docs/tinyapp-login-page.jpg)
 !["Screenshot of registration page"](https://github.com/Dechantg/tinyapp/blob/master/docs/tinyapp-registration-page.jpg)
 !["Screenshot of new entry/edit page"](https://github.com/Dechantg/tinyapp/blob/master/docs/tinyapp-new-entry-and-edit-page.jpg)
+!["Screenshot of new entry/edit page"](https://github.com/Dechantg/tinyapp/blob/master/docs/tinyapp-redirect-screen.jpg)
 
 ## Dependencies
 
