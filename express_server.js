@@ -20,9 +20,6 @@ app.use(cookieSession({
   keys: ["23579823fbn2uihb8gf723b"]
 }));
 
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
-});
 
 
 const users = {};
@@ -30,6 +27,12 @@ const urlDatabase = {};
 
 
 app.get("/", (req, res) => {
+  
+ 
+  if (!req.session.userId) {
+    return res.redirect("/login");
+  }
+
   res.redirect("/urls");
 
 });
@@ -54,7 +57,7 @@ app.post("/login", (req, res) => {
   const userId = req.body.userId;
   
   if (!getUserByEmail(userId, users)) {
-    return res.status(403).send("Invalid Login, please check your username or register");
+    return res.status(403).send("Invalid Login, please check your username and <a href='/login'>try again</a> or <a href='/register'>register</a>.");
   }
   const idFromEmail = (getUserByEmail(userId, users));
   const hashedPassword = users[idFromEmail].password;
@@ -65,8 +68,8 @@ app.post("/login", (req, res) => {
     return res.redirect("/urls");
   }
 
-  return res.status(401).send("Login failed: Invalid username or password");
-});
+  return res.status(403).send("Invalid username or password, please <a href='/login'>try again</a> or <a href='/register'>register</a>.");}
+  );
 
 
 // the get for the regitar page, linked to the submit id post
@@ -89,11 +92,11 @@ app.get("/register", (req, res) => {
 app.post("/submitId", (req, res) => {
 
   if (!req.body.userId || !req.body.password) {
-    return res.status(400).send("Error!! Please enter a valid Email and Password");
+    return res.status(403).send("Invalid username or password, please <a href='/register'>try again</a>.");
   }
 
   if (getUserByEmail(req.body.userId, users)) {
-    return res.status(400).send("Error!! Email already exists. Please login");
+    return res.status(400).send("Username already exists, please Login <a href='/login'>login</a> or <a href='/register'>try again</a>.");
   }
 
   const newId = generateRandomString(8);
@@ -117,7 +120,7 @@ app.get("/urls", (req, res) => {
   const userSessionId = req.session.userId;
 
   if (!req.session.userId) {
-    return res.redirect("/login");
+    return res.status(403).send("You need to be logged in to view links. Please <a href='/login'>login</a> or <a href='/register'>register</a>.");
   }
 
   if (!userSessionId || !users[userSessionId]) {
@@ -153,7 +156,7 @@ app.get("/urls", (req, res) => {
 app.post("/urls", (req, res) => {
 
   if (!req.session.userId) {
-    return res.send("You need to be logged in.");
+    return res.status(403).send("You need to be logged in to view links. Please <a href='/login'>login</a> or <a href='/register'>register</a>.");
   }
 
   res.redirect(`/urls`);
@@ -183,12 +186,12 @@ app.post("/urls/:id/edit", (req, res) => {
 
   if (!userSessionId) {
    
-    return res.send("You need to be logged in to edit links.");
+    return res.status(403).send("You need to be logged in to edit links. Please <a href='/login'>login</a> or <a href='/register'>register</a>.");
   }
    
  
   if (userSessionId !== urlDatabase[shortUrl].userId) {
-    return res.send("You cannot edit a cookie you do not own.");
+    return res.status(403).send("You cannot edit a link you do not own. Please <a href='/login'>login</a> or <a href='/register'>register</a>.");
   }
 
   urlDatabase[shortUrl].longUrl = req.body.longUrl;
@@ -219,11 +222,11 @@ app.get("/urls/:id", (req, res) => {
   const urlId = req.params.id;
 
   if (!req.session.userId) {
-    return res.redirect("/login");
+    return res.status(403).send("You need to be logged in to edit links. Please <a href='/login'>login</a> or <a href='/register'>register</a>.");
   }
 
   if (!userId) {
-    return res.send("You need to be logged in to view this page");
+    return res.status(403).send("You need to be logged in to view this page. Please <a href='/login'>login</a> or <a href='/register'>register</a>.");
   }
 
   if (!urlDatabase[urlId]) {
@@ -231,7 +234,7 @@ app.get("/urls/:id", (req, res) => {
   }
 
   if (urlDatabase[urlId].userId !== userId) {
-    return res.send("This is not your URL");
+    return res.status(403).send("This is not your URL. Please <a href='/login'>login</a> or <a href='/register'>register</a>.");
   }
 
   const templateVars = {
@@ -251,18 +254,18 @@ app.post("/urls/:id/delete", (req, res) => {
   const deleteID = req.params.id;
 
   if (!userSessionId) {
-    return res.send("You must be logged in to delete cookies.");
+    return res.status(403).send("You need to be logged in to delete cookies. Please <a href='/login'>login</a> or <a href='/register'>register</a>.");
   }
 
   if (!urlDatabase[deleteID]) {
-    return res.send("This cookie does not exist.");
+    return res.status(404).send("This cookie does not exist.");
   }
 
   const userId = urlDatabase[deleteID].userId;
 
   const userDeleting = users[userSessionId].id;
   if (userDeleting !== userId) {
-    return res.send("You cannot delete a cookie you do not own.");
+    return res.status(403).send("You cannot delete a cookie you do not own. Please <a href='/login'>login</a> or <a href='/register'>register</a>.");
   }
 
   delete urlDatabase[deleteID];
@@ -275,6 +278,13 @@ app.post("/urls/:id/delete", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const key = req.params.id; // pull the key from the reqest
   const longUrl = urlDatabase[key].longUrl; // pull the URL based on the key given
+  const userSessionId = req.session.userId;
+
+
+  if (!userSessionId) {
+    return res.status(403).send("You need to be logged in to use links. Please <a href='/login'>login</a> or <a href='/register'>register</a>.");
+  }
+
   if (!longUrl) {
     return res.status(404).send("URL not found");
   }
@@ -289,4 +299,10 @@ app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect("/login");
 
+});
+
+
+
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
 });
